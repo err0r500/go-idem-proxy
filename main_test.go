@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	idemProxy "github.com/err0r500/go-idem-proxy"
+	"github.com/err0r500/go-idem-proxy/cache.inmem"
 	"gopkg.in/h2non/baloo.v3"
 )
 
@@ -46,27 +46,13 @@ func TestPostRequestsPostUsesCache(t *testing.T) {
 	target, targetURL := startTarget(initial)
 	defer target.Close()
 
-	proxy := httptest.NewServer(idemProxy.GetHandler(idemProxy.NewInMemCache(), targetURL))
+	proxy := httptest.NewServer(idemProxy.GetHandler(cache.New(), targetURL))
 	defer proxy.Close()
 
 	path := randomPath()
 	req := baloo.New(proxy.URL).SetHeader("X-idem-token", "bla")
 	req.Post(path).Expect(t).Status(200).BodyEquals(initial).Done()
 	req.Post(path).Expect(t).Status(200).BodyEquals(initial).Done()
-}
-
-func hitTwice(url string) string {
-	resp, err := http.Post(url, "", nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(b)
-	return string(b)
 }
 
 func startTarget(initial string) (*httptest.Server, *url.URL) {
