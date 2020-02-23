@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -70,14 +71,15 @@ func GetHandler(cacher Cacher, url *url.URL) http.Handler {
 				origRW.Write([]byte(*cachedResp))
 				return
 			}
+
 			p.ModifyResponse = func(rf *http.Response) error {
 				rBody, err := ioutil.ReadAll(rf.Body)
 				if err != nil {
 					log.Println("failed to read response body", err.Error())
 					return nil
 				}
+				rf.Body = ioutil.NopCloser(bytes.NewBuffer(rBody))
 				cacher.Cache(idemToken, string(rBody))
-				origRW.Write(rBody)
 				return nil
 			}
 			p.ServeHTTP(origRW, origReq)
