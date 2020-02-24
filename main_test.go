@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	idemProxy "github.com/err0r500/go-idem-proxy"
 	"github.com/err0r500/go-idem-proxy/cache.inmem"
+	"github.com/err0r500/go-idem-proxy/proxyHandler"
 	"gopkg.in/h2non/baloo.v3"
 )
 
@@ -36,21 +36,24 @@ func TestPostRequestNeedsHeader(t *testing.T) {
 	target, targetURL := startTarget(initial)
 	defer target.Close()
 
-	proxy := httptest.NewServer(idemProxy.GetHandler(nil, targetURL))
+	pHandler := proxyHandler.New(nil, "bal")
+	proxy := httptest.NewServer(pHandler.Handle(targetURL))
 	defer proxy.Close()
 
 	baloo.New(proxy.URL).Post(randomPath()).Expect(t).Status(http.StatusBadRequest).Done()
 }
 
 func TestPostRequestsPostUsesCache(t *testing.T) {
+	idemToken := "X-idem-token"
 	target, targetURL := startTarget(initial)
 	defer target.Close()
 
-	proxy := httptest.NewServer(idemProxy.GetHandler(cache.New(), targetURL))
+	pHandler := proxyHandler.New(cache.New(), idemToken)
+	proxy := httptest.NewServer(pHandler.Handle(targetURL))
 	defer proxy.Close()
 
 	path := randomPath()
-	req := baloo.New(proxy.URL).SetHeader("X-idem-token", "bla")
+	req := baloo.New(proxy.URL).SetHeader(idemToken, "bla")
 	req.Post(path).Expect(t).Status(200).BodyEquals(initial).Done()
 	req.Post(path).Expect(t).Status(200).BodyEquals(initial).Done()
 }
