@@ -11,23 +11,43 @@ import (
 	"github.com/err0r500/go-idem-proxy/cache.redis"
 	"github.com/err0r500/go-idem-proxy/types"
 	"github.com/gomodule/redigo/redis"
+	"github.com/spf13/viper"
 )
 
 func main() {
-	address := "redis:6379"
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	viper.ReadInConfig()
+	viper.AutomaticEnv()
+
+	viper.SetDefault("PORT", "8080")
+	port := viper.GetString("PORT")
+
+	address := viper.GetString("Redis_Conn")
+	if address == "" {
+		log.Fatal("need Redis Connection string")
+	}
+
+	targetURL := viper.GetString("Target_URL")
+	if targetURL == "" {
+		log.Fatal("need proxy target string")
+	}
+
+	viper.SetDefault("Cache_TTL", 60)
+	cacheTTL := viper.GetInt("Cache_TTL")
+
 	c, err := redis.Dial("tcp", address)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer c.Close()
 
-	targetURL := "http://localhost:3000"
 	url, err := url.Parse(targetURL)
 	if err != nil {
 		log.Fatal("couldn't start due to malformed URL", targetURL)
 	}
-	http.Handle("/", GetHandler(cache.New(c), url))
-	if err = http.ListenAndServe(":8080", nil); err != nil {
+	http.Handle("/", GetHandler(cache.New(c, cacheTTL), url))
+	if err = http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}
 }
