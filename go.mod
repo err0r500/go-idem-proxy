@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/godoctor/godoctor v0.0.0-20181123222458-69df17f3a6f6 // indirect
+	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/nbio/st v0.0.0-20140626010706-e9e8d9816f32 // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/willf/bitset v1.1.10 // indirect

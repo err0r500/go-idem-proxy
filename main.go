@@ -8,18 +8,25 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/err0r500/go-idem-proxy/cache.inmem"
+	"github.com/err0r500/go-idem-proxy/cache.redis"
 	"github.com/err0r500/go-idem-proxy/types"
+	"github.com/gomodule/redigo/redis"
 )
 
 func main() {
+	address := "redis:6379"
+	c, err := redis.Dial("tcp", address)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer c.Close()
+
 	targetURL := "http://localhost:3000"
 	url, err := url.Parse(targetURL)
 	if err != nil {
 		log.Fatal("couldn't start due to malformed URL", targetURL)
 	}
-
-	http.Handle("/", GetHandler(cache.New(), url))
+	http.Handle("/", GetHandler(cache.New(c), url))
 	if err = http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
@@ -63,9 +70,15 @@ func handlePost(p *httputil.ReverseProxy, cacher types.Cacher, origRW http.Respo
 			return nil
 		}
 
+		// if it fails, bad luck, we don't really care
+		go func(idemToken string, rBody []byte) {
+			if err := cacher.Cache(idemToken, string(rBody)); err != nil {
+				log.Println("failed to put in cache", err.Error())
+			}
+		}(idemToken, rBody)
+
 		// restore original readCloser
 		rf.Body = ioutil.NopCloser(bytes.NewBuffer(rBody))
-		cacher.Cache(idemToken, string(rBody))
 		return nil
 	}
 	p.ServeHTTP(origRW, origReq)
