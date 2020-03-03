@@ -1,10 +1,10 @@
-package cache
+package cache_redis
 
 import (
 	"fmt"
 	"strconv"
 
-	"github.com/err0r500/go-idem-proxy/types"
+	"github.com/err0r500/go-idem-proxy/cache"
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -13,7 +13,7 @@ type redisCache struct {
 	ttl  string
 }
 
-func New(c redis.Conn, ttlInSec int) types.Cacher {
+func New(c redis.Conn, ttlInSec int) cache.Cacher {
 	return &redisCache{conn: c, ttl: strconv.Itoa(ttlInSec)}
 }
 

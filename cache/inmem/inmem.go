@@ -1,17 +1,17 @@
-package cache
+package cache_inmem
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/err0r500/go-idem-proxy/types"
+	"github.com/err0r500/go-idem-proxy/cache"
 )
 
 type Inmemcache struct {
 	store *sync.Map
 }
 
-func New() types.Cacher {
+func New() cache.Cacher {
 	return &Inmemcache{store: &sync.Map{}}
 }
 

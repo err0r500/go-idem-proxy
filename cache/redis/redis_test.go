@@ -1,12 +1,12 @@
 // +build integration
 
-package cache_test
+package cache_inmem_test
 
 import (
 	"log"
 	"testing"
 
-	"github.com/err0r500/go-idem-proxy/cache.redis"
+	"github.com/err0r500/go-idem-proxy/cache.inmem"
 	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/assert"
 )

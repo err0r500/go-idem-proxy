@@ -1,4 +1,4 @@
-package proxyHandler
+package handler_v1
 
 import (
 	"bytes"
@@ -8,22 +8,23 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/err0r500/go-idem-proxy/types"
+	"github.com/err0r500/go-idem-proxy/cache"
+	"github.com/err0r500/go-idem-proxy/handler"
 )
 
-type handler struct {
+type handlerv1 struct {
 	idemToken string
-	cacher    types.Cacher
+	cacher    cache.Cacher
 }
 
-func New(cacher types.Cacher, idemToken string) types.Handler {
-	return handler{
+func New(cacher cache.Cacher, idemToken string) handler.Handler {
+	return handlerv1{
 		idemToken,
 		cacher,
 	}
 }
 
-func (h handler) Handle(url *url.URL) http.Handler {
+func (h handlerv1) Handle(url *url.URL) http.Handler {
 	p := httputil.NewSingleHostReverseProxy(url)
 
 	return http.HandlerFunc(func(origRW http.ResponseWriter, origReq *http.Request) {
@@ -36,7 +37,7 @@ func (h handler) Handle(url *url.URL) http.Handler {
 	})
 }
 
-func (h handler) handlePost(p *httputil.ReverseProxy, origRW http.ResponseWriter, origReq *http.Request) {
+func (h handlerv1) handlePost(p *httputil.ReverseProxy, origRW http.ResponseWriter, origReq *http.Request) {
 	idemToken := origReq.Header.Get(h.idemToken)
 	if idemToken == "" {
 		origRW.WriteHeader(http.StatusBadRequest)

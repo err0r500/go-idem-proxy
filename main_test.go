@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/err0r500/go-idem-proxy/cache.inmem"
-	"github.com/err0r500/go-idem-proxy/proxyHandler"
+	cache "github.com/err0r500/go-idem-proxy/cache/inmem"
+	proxyHandler "github.com/err0r500/go-idem-proxy/handler/v1"
 	"gopkg.in/h2non/baloo.v3"
 )
 
@@ -59,6 +59,8 @@ func TestPostRequestsPostUsesCache(t *testing.T) {
 }
 
 func startTarget(initial string) (*httptest.Server, *url.URL) {
+	// hits will be incremented on each call, this allows us to check if the
+	// target server actually received the request only once
 	hits := 1
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, initial)
