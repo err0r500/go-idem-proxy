@@ -4,7 +4,7 @@ an HTTP proxy to get idempotency on POST requests
 
 Run
 ```
-REDIS_CONN=redis:6379 TARGET_URL=http://localhost:3000 go run main.go
+go-idem-proxy --redis-url=redis:6379 --target-url=http://localhost:3000
 ```
 
 - The proxy will expect an `X-idem-token` header (can be overriden with `IDEM_TOKEN=myHeader` env var) on every POST request
