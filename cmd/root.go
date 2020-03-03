@@ -53,7 +53,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-idem-proxy.yaml)")
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 8080, "the port the proxy listens on")
 	rootCmd.PersistentFlags().StringVarP(&idemToken, "idem-token", "i", "X-idem-token", "the header that will have to be provided on POST requests")
-	rootCmd.PersistentFlags().StringVarP(&targetURL, "target-url", "t", "localhost:3000", "where the proxy will forward the traffic")
+	rootCmd.PersistentFlags().StringVarP(&targetURL, "target-url", "t", "http://localhost:3000", "where the proxy will forward the traffic")
 	rootCmd.PersistentFlags().StringVarP(&redisURL, "redis-url", "r", "localhost:6379", "the URL of the redis database for caching")
 	rootCmd.PersistentFlags().IntVarP(&cacheTTL, "cache-ttl", "c", 60, "how long the cached requests are persisted")
 }
