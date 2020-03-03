@@ -37,41 +37,50 @@ func (h handlerv1) Handle(url *url.URL) http.Handler {
 	})
 }
 
-func (h handlerv1) handlePost(p *httputil.ReverseProxy, origRW http.ResponseWriter, origReq *http.Request) {
-	idemToken := origReq.Header.Get(h.idemToken)
+func (h handlerv1) handlePost(p *httputil.ReverseProxy, proxyRW http.ResponseWriter, proxyReq *http.Request) {
+	idemToken := proxyReq.Header.Get(h.idemToken)
 	if idemToken == "" {
-		origRW.WriteHeader(http.StatusBadRequest)
+		proxyRW.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	cachedResp, err := h.cacher.GetCache(idemToken)
 	if err != nil {
 		log.Println("failed to get Cache", err.Error())
-		origRW.WriteHeader(http.StatusInternalServerError)
+		proxyRW.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	// the response has been found in cache, we respond this immediatly
 	if cachedResp != nil {
-		origRW.Write([]byte(*cachedResp))
+		proxyRW.WriteHeader(cachedResp.StatusCode)
+		proxyRW.Write(cachedResp.Body)
 		return
 	}
 
-	p.ModifyResponse = func(rf *http.Response) error {
-		rBody, err := ioutil.ReadAll(rf.Body)
+	// nothing found in cache, we wait for the target response to come back and insert it in cache
+	p.ModifyResponse = func(targetResp *http.Response) error {
+		rBody, err := ioutil.ReadAll(targetResp.Body)
 		if err != nil {
 			log.Println("failed to read response body", err.Error())
 			return nil
 		}
 
-		// if it fails, bad luck, we don't really care
-		go func(idemToken string, rBody []byte) {
-			if err := h.cacher.Cache(idemToken, string(rBody)); err != nil {
+		go func() {
+			if err := h.cacher.Cache(
+				idemToken,
+				cache.Response{
+					Body:       rBody,
+					StatusCode: targetResp.StatusCode,
+				},
+			); err != nil {
+				// if it fails, bad luck, we just log
 				log.Println("failed to put in cache", err.Error())
 			}
-		}(idemToken, rBody)
+		}()
 
 		// restore original readCloser
-		rf.Body = ioutil.NopCloser(bytes.NewBuffer(rBody))
+		targetResp.Body = ioutil.NopCloser(bytes.NewBuffer(rBody))
 		return nil
 	}
-	p.ServeHTTP(origRW, origReq)
+	p.ServeHTTP(proxyRW, proxyReq)
 }
